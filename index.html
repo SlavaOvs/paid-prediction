@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Генератор изображения (Экспресс / Платный прогноз)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg:#0f1115;
+      --panel:#151922;
+      --text:#e8ecf1;
+      --muted:#98a2b3;
+      --accent:#3b82f6;
+      --accent-2:#22c55e;
+      --danger:#ef4444;
+      --border:#242a36;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      background:linear-gradient(180deg,#0e121a 0%, #0b0f16 100%) fixed;
+      color:var(--text);
+      padding:24px;
+    }
+    .app{
+      max-width:1100px; margin:0 auto; display:grid; gap:20px;
+      grid-template-columns: 420px 1fr;
+    }
+    h1{margin:0 0 6px;font-size:22px;letter-spacing:.2px}
+    .card{
+      background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+      padding:16px; box-shadow:0 6px 20px rgba(0,0,0,.25);
+    }
+    label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
+    select,input{width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+      background:#0f141d; color:var(--text); outline:none; font-size:14px}
+    input::placeholder{color:#6b7280}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .hidden{display:none !important}
+    .btn{
+      display:inline-flex; align-items:center; gap:10px; cursor:pointer;
+      background:var(--accent); border:none; color:white; padding:12px 14px; border-radius:12px;
+      font-weight:600; font-size:14px; transition:.2s; box-shadow:0 6px 16px rgba(59,130,246,.35)
+    }
+    .btn:disabled{opacity:.6; cursor:not-allowed; box-shadow:none}
+    .btn.secondary{background:#1f2937}
+    .hint{font-size:12px; color:var(--muted)}
+    .progress{height:10px; background:#0d1220; border:1px solid var(--border); border-radius:999px; overflow:hidden}
+    .bar{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width .25s}
+    .preview{
+      display:grid; place-items:center; background:#0b0f16; border:1px solid var(--border);
+      border-radius:var(--radius); min-height:300px; overflow:hidden
+    }
+    .actions{display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:12px}
+    .download{color:white; text-decoration:none}
+    .badge{display:inline-block; padding:4px 8px; border:1px solid var(--border); border-radius:999px; font-size:12px; color:var(--muted)}
+    .sep{height:1px; background:var(--border); margin:10px 0}
+    .stack{display:grid; gap:10px}
+    .tiny{font-size:11px;color:#8b93a6}
+    .ok{color:var(--accent-2)}
+    .err{color:var(--danger)}
+    /* Подключаем нужный файл шрифта (Bold Italic) */
+    @font-face{
+      font-family:'EstrictaBI';
+      src:
+        url('./Estricta/Estricta-BoldItalic.ttf') format('truetype'),
+        url('./Estricta/Estricta-BoldItalic.otf') format('opentype');
+      font-weight:700; font-style:italic; font-display:swap;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+      <h1>Генератор изображений</h1>
+      <div class="tiny">Фон: <span class="badge">background/Frame.png</span> · Шрифт: <span class="badge">Estricta Bold Italic</span></div>
+      <div class="sep"></div>
+
+      <div class="stack">
+        <div>
+          <label for="type">Тип</label>
+          <select id="type">
+            <option value="both">экспресс и платный прогноз</option>
+            <option value="express">экспресс</option>
+            <option value="paid">платный прогноз</option>
+          </select>
+        </div>
+
+        <!-- Блок: Экспресс -->
+        <div id="express-block" class="stack">
+          <div>
+            <label for="leagueExpress">Лига (экспресс)</label>
+            <select id="leagueExpress">
+              <option value="nhl">НХЛ</option>
+              <option value="khl">КХЛ</option>
+              <option value="both">НХЛ и КХЛ</option>
+            </select>
+            <div class="hint">Иконка: components/nhl.png, khl.png или NHL_KHL.png</div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="eventsCount">Количество событий (экспресс)</label>
+              <input id="eventsCount" type="text" placeholder="например: 4" />
+            </div>
+            <div>
+              <label for="coefExpress">Коэффициент (экспресс)</label>
+              <input id="coefExpress" type="text" placeholder="например: 6.75" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Блок: Платный прогноз -->
+        <div id="paid-block" class="stack">
+          <div class="row">
+            <div>
+              <label for="dateDay">Дата — число (платный прогноз)</label>
+              <input id="dateDay" type="text" placeholder="например: 12" />
+            </div>
+            <div>
+              <label for="dateMonth">Дата — месяц (платный прогноз)</label>
+              <input id="dateMonth" type="text" placeholder="например: ОКТЯБРЯ" />
+            </div>
+          </div>
+          <div>
+            <label for="leaguePaid">Лига (платный прогноз)</label>
+            <select id="leaguePaid">
+              <option value="nhl">НХЛ</option>
+              <option value="khl">КХЛ</option>
+              <option value="both">НХЛ и КХЛ</option>
+            </select>
+          </div>
+          <div class="row">
+            <div>
+              <label for="predCount">Количество прогнозов (платный прогноз)</label>
+              <input id="predCount" type="text" placeholder="например: 3" />
+            </div>
+            <div>
+              <label for="coefPaid">Коэффициент (платный прогноз)</label>
+              <input id="coefPaid" type="text" placeholder="например: 2.45" />
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <button id="generate" class="btn">⚙️ Создать изображение</button>
+          <button id="clear" class="btn secondary" type="button">Очистить поля</button>
+        </div>
+
+        <div class="progress" aria-hidden="true">
+          <div id="bar" class="bar"></div>
+        </div>
+        <div class="tiny" id="status">Готов к генерации.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 10px;font-size:18px;">Превью / Экспорт</h2>
+      <div id="preview" class="preview">
+        <div class="tiny" style="opacity:.8">Тут появится результат</div>
+      </div>
+      <div class="actions">
+        <a id="download" class="download btn secondary" href="#" download="card.png" style="visibility:hidden">⬇️ Скачать PNG</a>
+        <span class="hint">Размер зависит от «Тип» (1600×1300 / 1600×675 / 1600×615)</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== Константы из ТЗ ======
+    const FULL_W = 1600, FULL_H = 1300;
+    const CROP_EXPRESS = { sx:0, sy:0, sw:1600, sh:675 };       // верх
+    const CROP_PAID    = { sx:0, sy:685, sw:1600, sh:615 };     // низ (685–1300)
+
+    // Позиции и размеры текста (центрирование включаем через canvas API)
+    const POS = {
+      express: {
+        league: { nhl:{x:181,y:514}, khl:{x:181,y:514}, both:{x:116,y:514} },
+        eventsCount: { x:798, y:534, fontPx:90 },
+        coef:        { x:1346, y:534, fontPx:90 },
+      },
+      paid: {
+        dateDay:   { x:139,  y:1142, fontPx:90 },
+        dateMonth: { x:139,  y:1213, fontPx:51 },
+        league: { nhl:{x:401,y:1141}, khl:{x:401,y:1141}, both:{x:336,y:1141} },
+        predCount: { x:829,  y:1141, fontPx:90 },
+        coef:      { x:1346, y:1141, fontPx:90 },
+      }
+    };
+
+    // Пути к ресурсам
+    const PATHS = {
+      bg: './background/Frame.png',
+      league: {
+        nhl: './components/nhl.png',
+        khl: './components/khl.png',
+        both: './components/NHL_KHL.png',
+      },
+      // Шрифт Bold Italic (обязательно этот файл)
+      fontUrl: './Estricta/Estricta-BoldItalic.ttf',
+      fontFamily: 'EstrictaBI'
+    };
+
+    // ====== UI ======
+    const $ = sel => document.querySelector(sel);
+    const typeEl = $('#type');
+
+    const expressBlock = $('#express-block');
+    const leagueExpressEl = $('#leagueExpress');
+    const eventsCountEl = $('#eventsCount');
+    const coefExpressEl = $('#coefExpress');
+
+    const paidBlock = $('#paid-block');
+    const dateDayEl = $('#dateDay');
+    const dateMonthEl = $('#dateMonth');
+    const leaguePaidEl = $('#leaguePaid');
+    const predCountEl = $('#predCount');
+    const coefPaidEl = $('#coefPaid');
+
+    const generateBtn = $('#generate');
+    const clearBtn = $('#clear');
+    const progressBar = $('#bar');
+    const statusEl = $('#status');
+    const previewEl = $('#preview');
+    const downloadEl = $('#download');
+
+    function toggleBlocks(){
+      const t = typeEl.value;
+      expressBlock.classList.toggle('hidden', !(t==='express' || t==='both'));
+      paidBlock.classList.toggle('hidden',    !(t==='paid'    || t==='both'));
+    }
+    typeEl.addEventListener('change', toggleBlocks);
+    toggleBlocks();
+
+    clearBtn.addEventListener('click', ()=>{
+      [eventsCountEl, coefExpressEl, dateDayEl, dateMonthEl, predCountEl, coefPaidEl].forEach(i=>i.value='');
+      statusEl.textContent = 'Поля очищены.';
+    });
+
+    // ====== Утилиты загрузки ======
+    function loadImage(src){
+      return new Promise((resolve, reject)=>{
+        const img = new Image();
+        img.onload = ()=>resolve(img);
+        img.onerror = ()=>reject(new Error('Не удалось загрузить изображение: '+src));
+        img.src = src + (src.includes('?')?'':'?v=' + Date.now()); // bust cache в dev
+      });
+    }
+
+    async function loadFont(){
+      // Подключаем ТОЛЬКО BoldItalic
+      const face = new FontFace(PATHS.fontFamily, `url("${PATHS.fontUrl}")`, { style:'italic', weight:'700' });
+      await face.load();
+      document.fonts.add(face);
+      // дожидаемся, чтобы canvas смог применить
+      await document.fonts.ready;
+    }
+
+    function updateProgress(percent, note=''){
+      progressBar.style.width = Math.max(0, Math.min(100, percent)) + '%';
+      if(note) statusEl.textContent = note;
+    }
+
+    // ====== Рендер ======
+    async function generate(){
+      try{
+        generateBtn.disabled = true;
+        downloadEl.style.visibility = 'hidden';
+        previewEl.innerHTML = '<div class="tiny">Рендерим…</div>';
+        updateProgress(0, 'Загрузка ресурсов…');
+
+        const t = typeEl.value; // 'express' | 'paid' | 'both'
+
+        // Что нужно загрузить?
+        const tasks = [];
+        tasks.push(loadFont()); // 1) шрифт
+
+        tasks.push(loadImage(PATHS.bg)); // 2) фон
+        const needExpress = (t==='express' || t==='both');
+        const needPaid = (t==='paid' || t==='both');
+
+        if(needExpress){
+          const key = leagueExpressEl.value; // nhl | khl | both
+          tasks.push(loadImage(PATHS.league[key]));
+        } else {
+          tasks.push(Promise.resolve(null));
+        }
+
+        if(needPaid){
+          const key2 = leaguePaidEl.value; // nhl | khl | both
+          tasks.push(loadImage(PATHS.league[key2]));
+        } else {
+          tasks.push(Promise.resolve(null));
+        }
+
+        // Прогресс по этапам
+        let loaded = 0;
+        const total = tasks.length;
+        function tick(){ loaded++; updateProgress(Math.round((loaded/total)*60), 'Ресурсы загружены: '+loaded+'/'+total); }
+
+        // Запускаем и отмечаем прогресс «по завершении каждого»
+        const [_, bgPromise, expLeaguePromise, paidLeaguePromise] = tasks;
+        await tasks[0].then(tick); // font
+        const bg = await bgPromise.then(tick);
+        const leagueExpImg = await expLeaguePromise.then(tick);
+        const leaguePaidImg = await paidLeaguePromise.then(tick);
+
+        // 3) Рисуем на полном холсте
+        updateProgress(65, 'Рендер на полном холсте…');
+
+        const full = document.createElement('canvas');
+        full.width = FULL_W; full.height = FULL_H;
+        const ctx = full.getContext('2d');
+
+        // фон
+        ctx.drawImage(bg, 0, 0, FULL_W, FULL_H);
+
+        // Настройки текста (центрирование)
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+        // используем Estricta Bold Italic
+        function setFont(px){ ctx.font = `italic bold ${px}px "${PATHS.fontFamily}", sans-serif`; }
+
+        // Экспресс (верхняя часть)
+        if(needExpress){
+          // Лига (иконка)
+          const lkey = leagueExpressEl.value;
+          if(leagueExpImg){
+            const p = POS.express.league[lkey];
+            ctx.drawImage(leagueExpImg, p.x, p.y);
+          }
+          // Кол-во событий
+          if(eventsCountEl.value.trim()){
+            const p = POS.express.eventsCount;
+            setFont(p.fontPx);
+            ctx.fillText(eventsCountEl.value.trim(), p.x, p.y);
+          }
+          // Коэффициент
+          if(coefExpressEl.value.trim()){
+            const p = POS.express.coef;
+            setFont(p.fontPx);
+            ctx.fillText(coefExpressEl.value.trim(), p.x, p.y);
+          }
+        }
+
+        // Платный прогноз (нижняя часть)
+        if(needPaid){
+          // Дата: число
+          if(dateDayEl.value.trim()){
+            const p = POS.paid.dateDay;
+            setFont(p.fontPx);
+            ctx.fillText(dateDayEl.value.trim(), p.x, p.y);
+          }
+          // Дата: месяц
+          if(dateMonthEl.value.trim()){
+            const p = POS.paid.dateMonth;
+            setFont(p.fontPx);
+            ctx.fillText(dateMonthEl.value.trim(), p.x, p.y);
+          }
+          // Лига (иконка)
+          const lkey2 = leaguePaidEl.value;
+          if(leaguePaidImg){
+            const pL = POS.paid.league[lkey2];
+            ctx.drawImage(leaguePaidImg, pL.x, pL.y);
+          }
+          // Кол-во прогнозов
+          if(predCountEl.value.trim()){
+            const p = POS.paid.predCount;
+            setFont(p.fontPx);
+            ctx.fillText(predCountEl.value.trim(), p.x, p.y);
+          }
+          // Коэффициент
+          if(coefPaidEl.value.trim()){
+            const p = POS.paid.coef;
+            setFont(p.fontPx);
+            ctx.fillText(coefPaidEl.value.trim(), p.x, p.y);
+          }
+        }
+
+        updateProgress(82, 'Обрезка под выбранный тип…');
+
+        // 4) Кроп под тип
+        let outW = FULL_W, outH = FULL_H;
+        let sx = 0, sy = 0, sw = FULL_W, sh = FULL_H;
+        if(t==='express'){
+          ({sx,sy,sw,sh} = CROP_EXPRESS);
+          outW = sw; outH = sh;
+        } else if(t==='paid'){
+          ({sx,sy,sw,sh} = CROP_PAID);
+          outW = sw; outH = sh;
+        }
+
+        const out = document.createElement('canvas');
+        out.width = outW; out.height = outH;
+        const octx = out.getContext('2d');
+        octx.drawImage(full, sx, sy, sw, sh, 0, 0, outW, outH);
+
+        updateProgress(92, 'Подготовка предпросмотра…');
+
+        // 5) Показ превью
+        const dataURL = out.toDataURL('image/png');
+        previewEl.innerHTML = '';
+        const img = new Image();
+        img.src = dataURL;
+        img.alt = 'Результат';
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        img.style.display = 'block';
+        previewEl.appendChild(img);
+
+        // 6) Кнопка загрузки (Blob)
+        out.toBlob(blob=>{
+          if(blob){
+            const url = URL.createObjectURL(blob);
+            downloadEl.href = url;
+            const stamp = new Date().toISOString().replace(/[:.]/g,'-');
+            const suffix = t==='both' ? 'both' : (t==='express'?'express':'paid');
+            downloadEl.download = `card_${suffix}_${stamp}.png`;
+            downloadEl.style.visibility = 'visible';
+            updateProgress(100, 'Готово ✅');
+          } else {
+            updateProgress(100, 'Готово (dataURL) ✅');
+          }
+        });
+
+      } catch(err){
+        console.error(err);
+        statusEl.innerHTML = `<span class="err">Ошибка: ${err.message}</span>`;
+        previewEl.innerHTML = '<div class="tiny" style="color:#ef4444">Не удалось сгенерировать изображение.</div>';
+      } finally{
+        generateBtn.disabled = false;
+      }
+    }
+
+    generateBtn.addEventListener('click', generate);
+  </script>
+</body>
+</html>
