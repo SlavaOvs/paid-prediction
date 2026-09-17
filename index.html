@@ -63,6 +63,9 @@
                             <option value="NHL_KHL">НХЛ и КХЛ</option>
                             <option value="NHL">НХЛ</option>
                             <option value="KHL">КХЛ</option>
+                            <option value="BEL">Чемпионат Беларуси</option>
+                            <option value="NHL_BEL">НХЛ + ЧБ</option>
+                            <option value="KHL_BEL">КХЛ + ЧБ</option>
                         </select>
                     </div>
                     <div>
@@ -94,6 +97,9 @@
                              <option value="NHL_KHL">НХЛ и КХЛ</option>
                             <option value="NHL">НХЛ</option>
                             <option value="KHL">КХЛ</option>
+                            <option value="BEL">Чемпионат Беларуси</option>
+                            <option value="NHL_BEL">НХЛ + ЧБ</option>
+                            <option value="KHL_BEL">КХЛ + ЧБ</option>
                         </select>
                     </div>
                     <div>
@@ -189,6 +195,11 @@
                 ctx.fillText(text, x, y);
             };
 
+            // Центрируем логотип лиги по его фактической ширине.
+            const drawLeagueImage = (image, centerX, y) => {
+                ctx.drawImage(image, centerX - image.width / 2, y);
+            };
+
             // Обработчик отправки формы
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -220,8 +231,7 @@
                     if (selectedType === 'both' || selectedType === 'express') {
                         const leagueVal = document.getElementById('expressLeague').value;
                         const leagueImg = await loadImage(`components/${leagueVal.toLowerCase()}.png`);
-                        const xPos = leagueVal === 'NHL_KHL' ? 116 : 181;
-                        ctx.drawImage(leagueImg, xPos, 514);
+                        drawLeagueImage(leagueImg, 230, 514);
 
                         drawText(document.getElementById('expressEvents').value, 798, 534 + 45, 90); // +45 для вертикального центрирования
                         drawText(document.getElementById('expressOdds').value, 1346, 534 + 45, 90); // +45 для вертикального центрирования
@@ -232,8 +242,7 @@
                     if (selectedType === 'both' || selectedType === 'paid') {
                         const leagueVal = document.getElementById('paidLeague').value;
                         const leagueImg = await loadImage(`components/${leagueVal.toLowerCase()}.png`);
-                        const xPos = leagueVal === 'NHL_KHL' ? 336 : 401;
-                        ctx.drawImage(leagueImg, xPos, 1141);
+                        drawLeagueImage(leagueImg, 450, 1141);
 
                         drawText(document.getElementById('paidDateDay').value, 139, 1142 + 45, 90); // +45
                         drawText(document.getElementById('paidDateMonth').value, 139, 1213 + 25, 51); // +25
